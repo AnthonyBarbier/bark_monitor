@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-import tensorflow as tf
-from scipy.io import wavfile
+#import tensorflow as tf
+#from scipy.io import wavfile
 
 from bark_monitor.recorders.wave_recorder import WaveRecorder
 

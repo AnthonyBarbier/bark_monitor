@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Optional
 
-import tensorflow as tf
-import tensorflow_hub as hub
-from scipy.io import wavfile
+#import tensorflow as tf
+#import tensorflow_hub as hub
+#from scipy.io import wavfile
 
 from bark_monitor.recorders.wave_recorder import WaveRecorder
 

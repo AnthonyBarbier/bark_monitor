@@ -28,8 +28,8 @@ class Recorder(BaseRecorder):
 
     def _init(self):
         super()._init()
-        self._barking_at = datetime.now()
-        self._is_barking = False
+        self._barking_start = None
+        self._last_barking = None
 
     def _is_bark(self, value: int) -> bool:
         if self._bark_level == 0:
@@ -48,7 +48,7 @@ class Recorder(BaseRecorder):
         assert self._stream is not None
         self._bark_level = 0
         for _ in range(range_measurements):
-            data = self._stream.read(self._chunk)
+            data = self._stream.read(self._chunk, exception_on_overflow=False)
             self._bark_level = max(self._bark_level, self._signal_to_intensity(data))
         self._bark_level *= 2
 
@@ -68,30 +68,30 @@ class Recorder(BaseRecorder):
 
             # Save data if dog is barking
             is_bark = self._is_bark(intensity)
-            if is_bark:
-                self._frames.append(data)
-
             # If to update time and stop recording the bark
             if is_bark:
-                self._barking_at = datetime.now()
-                if not self._is_barking:
-                    self._is_barking = True
+                self._last_barking = datetime.now()
+                if self._barking_start is None:
+                    self._barking_start = self._last_barking
+                    print(f"Barking started {self._barking_start}")
                     self._chat_bot.send_bark(intensity - self._bark_level)
 
-            elif self._is_barking and (datetime.now() - self._barking_at) > timedelta(
-                seconds=5
-            ):
-                assert self._barking_at is not None
-                self._is_barking = False
+            if self._barking_start is not None:
+                self._frames.append(data)
 
-                recording = Recording.read(self.output_folder)
-                duration = timedelta(
-                    seconds=(len(self._frames) * self._chunk) / self._fs
-                )
-                recording.add_time_barked(duration)
+                if (datetime.now() - self._last_barking) > timedelta(
+                    seconds=10
+                ):
+                    print(f"Stopped barking timeout Bark start {self._barking_start}, Last bark {self._last_barking} / now {datetime.now()}, delta = {datetime.now()-self._last_barking}")
+                    recording = Recording.read(self.output_folder)
+                    duration = timedelta(
+                        seconds=(len(self._frames) * self._chunk) / self._fs
+                    )
+                    recording.add_time_barked(duration)
 
-                self._chat_bot.send_end_bark(duration)
-                self._save_recording(self._frames)
-                self._frames = []
+                    self._chat_bot.send_end_bark(duration)
+                    self._save_recording(self._frames)
+                    self._frames = []
+                    self._barking_start = None
 
         self._stop_stream()

@@ -19,7 +19,7 @@ class BaseRecorder(ABC):
     def __init__(
         self,
         output_folder: str,
-        framerate: int = 44100,
+        framerate: int = 48000,
         chunk: int = 4096,
     ) -> None:
         self.running = False

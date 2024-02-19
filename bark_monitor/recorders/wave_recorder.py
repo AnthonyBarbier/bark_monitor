@@ -8,8 +8,8 @@ from typing import Optional
 
 import numpy as np
 import requests
-import scipy
-import tensorflow as tf
+#import scipy
+#import tensorflow as tf
 
 from bark_monitor.recorders.base_recorder import BaseRecorder
 from bark_monitor.recorders.recording import Recording

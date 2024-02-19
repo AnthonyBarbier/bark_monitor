@@ -208,7 +208,7 @@ class VeryBarkBot:
         chats.add(update.effective_chat)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="I will now let you know when Watson is barking!",
+            text="I will now let you know when Chip is barking!",
         )
 
     async def _is_registered(self, id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
