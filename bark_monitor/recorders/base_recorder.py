@@ -20,7 +20,7 @@ class BaseRecorder(ABC):
         self,
         output_folder: str,
         framerate: int = 48000,
-        chunk: int = 4096,
+        chunk: int = 48000,
     ) -> None:
         self.running = False
         self.is_paused = False
@@ -104,11 +104,8 @@ class BaseRecorder(ABC):
             filepath = Path(self.today_audio_folder, prefix + " " + self._filename.name)
         file = self._save_recording_to(frames, filepath)
         self._chat_bot.send_text(
-            "Save file: "
-            + str(filepath)
-            + ".\nDownload it with \n\n ```\n/audio "
+            "/audio "
             + filepath.name
-            + "\n```"
         )
         return file
 
@@ -127,7 +124,7 @@ class BaseRecorder(ABC):
         wf.close()
         return filepath
 
-    def _start_stream(self) -> None:
+    def _start_stream(self, callback=None) -> None:
         self._pyaudio_interface = pyaudio.PyAudio()  # Create an interface to PortAudio
         self._stream = self._pyaudio_interface.open(
             format=self._sample_format,
@@ -135,6 +132,7 @@ class BaseRecorder(ABC):
             rate=self._fs,
             frames_per_buffer=self._chunk,
             input=True,
+            stream_callback=callback,
         )
 
     def _stop_stream(self) -> None:

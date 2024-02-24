@@ -138,6 +138,8 @@ class VeryBarkBot:
                 + self._recorder.__class__.__name__
             )
             requests.get(url).json()
+        print("Auto start recording!")
+        self._recorder.record()
         self._application.run_polling()
         self._stop_recorder_sync()
 
