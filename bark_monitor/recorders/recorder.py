@@ -20,8 +20,9 @@ class Data:
             self.data = json.loads(self.filename.read_text(encoding="utf-8"))
             for d in self.data["barks"]:
                 d["r"] = 5
+            print(f"Successfully loaded {filename}")
         except Exception as e:
-            print(f"Ignoring error: {e}")
+            print(f"Ignoring error: {e} from {filename}")
             self.data = { "barks":[]}
         self.save()
 
@@ -52,7 +53,7 @@ class Recorder(BaseRecorder):
         self.running = False
         self.is_paused = False
 
-        self.json = Data(pathlib.Path(output_folder).parent / "bark_data.json")
+        self.json = Data(pathlib.Path.cwd() / "bark_data.json")
         self._last_bark = datetime.now()
         super().__init__(output_folder)
         self.clean_up()
