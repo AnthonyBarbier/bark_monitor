@@ -5,6 +5,7 @@ from typing import Optional
 
 import oauth2client.client
 import requests
+import traceback
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -18,6 +19,12 @@ from telegram.ext import (
 from bark_monitor.chats import Chats
 from bark_monitor.google_sync import GoogleSync
 from bark_monitor.recorders.recording import Recording
+
+def _safe_get_url_json(url):
+    try:
+        requests.get(url, timeout=10.0).json()
+    except Exception as e:
+        print(f"Caught and ignored {''.join(traceback.format_exception(type(e), e, e.__traceback__))}")
 
 
 class Commands(Enum):
@@ -137,7 +144,7 @@ class VeryBarkBot:
                 f"sendMessage?chat_id={chat}&text=Bot is ready with "
                 + self._recorder.__class__.__name__
             )
-            requests.get(url).json()
+            _safe_get_url_json(url)
         print("Auto start recording!")
         self._recorder.record()
         self._application.run_polling()
@@ -329,7 +336,8 @@ class VeryBarkBot:
                 f"bot{self._api_key}/"
                 f"sendMessage?chat_id={chat}&text=" + text
             )
-            requests.get(url).json()
+            _safe_get_url_json(url)
+
 
     def send_end_bark(self, time_barking: timedelta) -> None:
         self.send_text("barking stopped after: " + str(time_barking))

@@ -1,0 +1,117 @@
+<div style="height: 800px">
+    <canvas id="myChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+<script type="module">
+  import bark_data from './bark_data.json' assert {type: 'json'}
+  console.log(bark_data)
+  const ctx = document.getElementById('myChart');
+  const labels = bark_data["labels"];
+  const data = {
+    labels: labels,
+    datasets: [{
+      label: 'Chip',
+      data: bark_data["barks"],
+      fill: false,
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1
+    }]
+  };
+  var date_string = function(value, with_sec){
+    var date = new Date(value * 1000);
+    // Hours part from the timestamp
+    var hours = date.getHours();
+
+    // Minutes part from the timestamp
+    var minutes = "0" + date.getMinutes();
+
+    // Seconds part from the timestamp
+    var seconds = "0" + date.getSeconds();
+
+    // Will display time in 10:30:23 format
+    var out = hours + 'h' + minutes.substr(-2)
+    if(with_sec){
+       out+= ':' + seconds.substr(-2);
+     }
+     return out;
+  };
+  new Chart(ctx,{
+    type: 'bubble',
+    data: data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        zoom: {
+          pan: {
+            enabled: true,
+            scaleMode: "xy",
+          },
+          limits: {
+          },
+          zoom: {
+            wheel: {
+              enabled: true,
+            },
+            pinch: {
+              enabled: true,
+            },
+            scaleMode: "xy",
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return date_string(context.parsed.x, true);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: bark_data["min"],
+          max: bark_data["max"],
+          ticks: {
+            count: 13,
+            callback: function(value, index, ticks) {
+              return date_string(value, false);
+            }
+          }
+        }
+      },
+    }
+  });
+  /*
+  new Chart(ctx, {
+    type: 'line',
+    data: data,
+    options: {
+      scales: {
+        x: {
+          suggestedMin: 0,
+          suggestedMax: 20,
+          },
+        y: {
+          suggestedMin: 0,
+          suggestedMax: 4000,
+        }
+      },
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: 'Bark monitor chart'
+        }
+      }
+    }
+  });
+  */
+</script>
+

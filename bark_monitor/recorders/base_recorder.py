@@ -1,8 +1,10 @@
 import logging
 import threading
 import wave
+import re
+import shutil
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -94,11 +96,23 @@ class BaseRecorder(ABC):
             return
         self._t.join()
 
+    def clean_up(self):
+        now = datetime.now()
+        for f in self.audio_folder.glob("*"):
+            if not f.is_dir():
+                continue
+            d = datetime.strptime(f.name, "%d-%m-%Y")
+            if (now - d) > timedelta(days=10):
+                print(f"Deleting {d} / {f.absolute()}")
+                shutil.rmtree(f.absolute())
+
+
     def _save_recording(self, frames: list[bytes], prefix: str | None = None) -> Path:
         """Save a recording of `frames` to `self._filename`.
 
         :return: the path at which the recording is saved.
         """
+
         filepath = self._filename
         if prefix is not None:
             filepath = Path(self.today_audio_folder, prefix + " " + self._filename.name)
