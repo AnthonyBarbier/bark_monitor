@@ -27,7 +27,7 @@ class Data:
         self.save()
 
     def add_bark(self, time, intensity):
-        self.data["barks"].append({"x": int(time.timestamp()), "y": int(intensity), "r": 10})
+        self.data["barks"].append({"x": int(time.timestamp()), "y": int(intensity), "r": 5})
 
     def save(self):
         now = trunc_hour(datetime.now()) + timedelta(hours=1)
