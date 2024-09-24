@@ -21,7 +21,7 @@
 
 <script type="module">
   const params = new URLSearchParams(window.location.search);
-  const filename = params.get("file") || "./bark_data.json"
+  const filename = "./"+ (params.get("file") || "bark_data.json")
   const time_offset = parseInt(params.get("offset") || "0");
   const { default: bark_data} = await import(filename, {with: {type: 'json'}});
   console.log(bark_data)
