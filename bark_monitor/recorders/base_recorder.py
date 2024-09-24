@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 import wave
 import re
 import shutil
@@ -45,9 +46,19 @@ class BaseRecorder(ABC):
 
         self._bark_logger.info("Starting bot")
 
-    def start_bot(self, bot: VeryBarkBot) -> None:
+    def start_bot(self, bot: VeryBarkBot|None) -> None:
         self._chat_bot = bot
-        self._chat_bot.start(self)
+        if bot:
+            self._chat_bot.start(self)
+        else:
+            self.record()
+            try:
+                while True:
+                    time.sleep(10)
+            finally:
+                print("EXITING",flush=True)
+                if self.running is True:
+                    self._recorder.stop()
 
     @property
     def audio_folder(self) -> Path:
@@ -117,10 +128,11 @@ class BaseRecorder(ABC):
         if prefix is not None:
             filepath = Path(self.today_audio_folder, prefix + " " + self._filename.name)
         file = self._save_recording_to(frames, filepath)
-        self._chat_bot.send_text(
-            "/audio "
-            + filepath.name
-        )
+        if self._chat_bot:
+            self._chat_bot.send_text(
+                "/audio "
+                + filepath.name
+            )
         return file
 
     def _save_recording_to(self, frames: list[bytes], filepath: Path) -> Path:

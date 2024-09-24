@@ -102,7 +102,8 @@ class Recorder(BaseRecorder):
                     if self._barking_start is None:
                         self._barking_start = self._last_barking
                         print(f"Barking started {self._barking_start}", flush=True)
-                        self._chat_bot.send_bark(intensity - self._bark_level)
+                        if self._chat_bot:
+                            self._chat_bot.send_bark(intensity - self._bark_level)
                     print(f"bark: {intensity}", flush=True)
 
                 if self._barking_start is not None:
@@ -120,7 +121,8 @@ class Recorder(BaseRecorder):
                         print(f"Stopped barking timeout Bark start {self._barking_start}, Last bark {self._last_barking} / now {datetime.now()}, delta = {datetime.now()-self._last_barking} Duration {duration}", flush=True)
                         recording.add_time_barked(duration)
 
-                        self._chat_bot.send_end_bark(duration)
+                        if self._chat_bot:
+                            self._chat_bot.send_end_bark(duration)
                         self._save_recording(self._frames)
                         self.clean_up()
                         self._frames = []

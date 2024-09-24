@@ -16,12 +16,15 @@ def main():
     ) = get_parameters()
 
     recorder = Recorder(output_folder)
-    bot = VeryBarkBot(
-        api_key=api_key,
-        config_folder=config_folder,
-        accept_new_users=accept_new_users,
-        google_creds=google_creds,
-    )
+    if api_key:
+        bot = VeryBarkBot(
+            api_key=api_key,
+            config_folder=config_folder,
+            accept_new_users=accept_new_users,
+            google_creds=google_creds,
+        )
+    else:
+        bot = None
     recorder.start_bot(bot)
 
 
