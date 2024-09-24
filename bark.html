@@ -6,22 +6,43 @@
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
+<a href="bark.html">[  home  ]</a>
+<a href="bark.html?offset=86400">[  24h  ]</a>
+<a href="bark.html?offset=129600">[  12h  ]</a>
+<a href="bark.html?offset=158400">[   4h  ]</a>
+<a href="bark.html?offset=169200">[   1h  ]</a>
+<br/>
+<a href="bark.html?file=bark_chromebook.json">[  chromebook  ]</a>
+<a href="bark.html?file=bark_chromebook.json&offset=86400">[  24h  ]</a>
+<a href="bark.html?file=bark_chromebook.json&offset=129600">[  12h  ]</a>
+<a href="bark.html?file=bark_chromebook.json&offset=158400">[   4h  ]</a>
+<a href="bark.html?file=bark_chromebook.json&offset=169200">[   1h  ]</a>
+<br/>
+
 <script type="module">
-  import bark_data from './bark_data.json' with {type: 'json'}
+  const params = new URLSearchParams(window.location.search);
+  const filename = params.get("file") || "./bark_data.json"
+  const time_offset = parseInt(params.get("offset") || "0");
+  const { default: bark_data} = await import(filename, {with: {type: 'json'}});
   console.log(bark_data)
+  console.log(window.location)
   const ctx = document.getElementById('myChart');
   const labels = bark_data["labels"];
+  var date_string = function(value){
+    var date = new Date(value * 1000);
+    return date.toString();
+  };
   const data = {
     labels: labels,
     datasets: [{
-      label: 'Chip',
+      label: 'Chip Last update:' + date_string(bark_data["now"]),
       data: bark_data["barks"],
       fill: false,
       borderColor: 'rgb(75, 192, 192)',
       tension: 0.1
     }]
   };
-  var date_string = function(value, with_sec){
+  var time_string = function(value, with_sec){
     var date = new Date(value * 1000);
     // Hours part from the timestamp
     var hours = date.getHours();
@@ -66,19 +87,19 @@
         tooltip: {
           callbacks: {
             label: function(context) {
-              return date_string(context.parsed.x, true);
+              return time_string(context.parsed.x, true);
             }
           }
         }
       },
       scales: {
         x: {
-          min: bark_data["min"],
+          min: bark_data["min"] + time_offset,
           max: bark_data["max"],
           ticks: {
             count: 13,
             callback: function(value, index, ticks) {
-              return date_string(value, false);
+              return time_string(value, false);
             }
           }
         }

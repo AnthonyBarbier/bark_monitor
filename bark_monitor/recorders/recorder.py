@@ -20,9 +20,9 @@ class Data:
             self.data = json.loads(self.filename.read_text(encoding="utf-8"))
             for d in self.data["barks"]:
                 d["r"] = 5
-            print(f"Successfully loaded {filename}")
+            print(f"Successfully loaded {filename}", flush=True)
         except Exception as e:
-            print(f"Ignoring error: {e} from {filename}")
+            print(f"Ignoring error: {e} from {filename}", flush=True)
             self.data = { "barks":[]}
         self.save()
 
@@ -30,14 +30,16 @@ class Data:
         self.data["barks"].append({"x": int(time.timestamp()), "y": int(intensity), "r": 5})
 
     def save(self):
-        now = trunc_hour(datetime.now()) + timedelta(hours=1)
-        threshold = (now - timedelta(hours=48)).timestamp()
-        self.data["min"] = int(threshold)
-        self.data["max"] = int(now.timestamp())
+        now = datetime.now()
+        end = trunc_hour(now) + timedelta(hours=1)
+        start = (now - timedelta(hours=48)).timestamp()
+        self.data["min"] = int(start)
+        self.data["max"] = int(end.timestamp())
+        self.data["now"] = int(now.timestamp())
         self.data["barks"] = [
-                d for d in self.data["barks"] if d["x"] > threshold]
+                d for d in self.data["barks"] if d["x"] > start]
         self.filename.write_text(json.dumps(self.data), encoding="utf-8")
-        print(f"Saved {len(self.data['barks'])} points to {self.filename}")
+        print(f"Saved {len(self.data['barks'])} points to {self.filename}", flush=True)
 
 
 
@@ -91,13 +93,13 @@ class Recorder(BaseRecorder):
 
                     if self._barking_start is None:
                         self._barking_start = self._last_barking
-                        print(f"Barking started {self._barking_start}")
+                        print(f"Barking started {self._barking_start}", flush=True)
                         self._chat_bot.send_bark(intensity - self._bark_level)
-                    print(f"bark: {intensity}")
+                    print(f"bark: {intensity}", flush=True)
 
                 if self._barking_start is not None:
                     self._frames.append(bytes(data))
-                    print(f"Adding {datetime.now()} {intensity}")
+                    print(f"Adding {datetime.now()} {intensity}", flush=True)
 
                     if (datetime.now() - self._last_barking) > timedelta(
                         seconds=15
@@ -107,7 +109,7 @@ class Recorder(BaseRecorder):
                         duration = timedelta(
                             seconds=(len(self._frames) * self._chunk) / self._fs
                         )
-                        print(f"Stopped barking timeout Bark start {self._barking_start}, Last bark {self._last_barking} / now {datetime.now()}, delta = {datetime.now()-self._last_barking} Duration {duration}")
+                        print(f"Stopped barking timeout Bark start {self._barking_start}, Last bark {self._last_barking} / now {datetime.now()}, delta = {datetime.now()-self._last_barking} Duration {duration}", flush=True)
                         recording.add_time_barked(duration)
 
                         self._chat_bot.send_end_bark(duration)
