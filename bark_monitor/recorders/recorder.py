@@ -6,6 +6,7 @@ import time
 import json
 import pathlib
 import pyaudio
+import os
 
 from bark_monitor.recorders.base_recorder import BaseRecorder
 from bark_monitor.recorders.recording import Recording
@@ -55,7 +56,14 @@ class Recorder(BaseRecorder):
         self.running = False
         self.is_paused = False
 
-        self.json = Data(pathlib.Path.cwd() / "bark_data.json")
+        if env_path := os.environ.get("JSON_PATH"):
+            path = pathlib.Path(env_path)
+        else:
+            path = pathlib.Path("bark_data.json")
+
+        if not path.is_absolute():
+            path = pathlib.Path.cwd() / path
+        self.json = Data(path)
         self._last_bark = datetime.now()
         super().__init__(output_folder)
         self.clean_up()
