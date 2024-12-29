@@ -13,6 +13,9 @@ def main():
         microphone_framerate,
         sampling_time_bark_seconds,
         google_creds,
+        audio_device,
+        output_data_file,
+        debug_print,
     ) = get_parameters()
 
     recorder = YamnetRecorder(

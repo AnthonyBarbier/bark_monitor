@@ -24,6 +24,7 @@ class BaseRecorder(ABC):
         output_folder: str,
         framerate: int = 48000,
         chunk: int = 48000,
+        audio_device: str | None = None,
     ) -> None:
         self.running = False
         self.is_paused = False
@@ -32,6 +33,7 @@ class BaseRecorder(ABC):
         self._sample_format = pyaudio.paInt16  # 16 bits per sample
         self._channels = 1
         self._fs = framerate
+        self._audio_device = audio_device
 
         self._frames = []  # Initialize array to store frames
 
@@ -151,7 +153,20 @@ class BaseRecorder(ABC):
         return filepath
 
     def _start_stream(self, callback=None) -> None:
-        self._pyaudio_interface = pyaudio.PyAudio()  # Create an interface to PortAudio
+        p = pyaudio.PyAudio()  # Create an interface to PortAudio
+        self._pyaudio_interface = p
+        input_device_index = None
+        if self._audio_device is not None:
+            info = p.get_host_api_info_by_index(0)
+            numdevices = info.get('deviceCount')
+            for i in range(0, numdevices):
+                if (p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
+                    name = p.get_device_info_by_host_api_device_index(0, i).get('name')
+                    print("Input Device id ", i, " - ", name, flush=True)
+                    if self._audio_device in name:
+                        input_device_index = i
+                        print("Contains ",self._audio_device,": setting device index to ", i, flush=True)
+                        break
         self._stream = self._pyaudio_interface.open(
             format=self._sample_format,
             channels=self._channels,
@@ -159,6 +174,7 @@ class BaseRecorder(ABC):
             frames_per_buffer=self._chunk,
             input=True,
             stream_callback=callback,
+            input_device_index=input_device_index,
         )
 
     def _stop_stream(self) -> None:

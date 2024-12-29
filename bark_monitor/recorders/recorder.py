@@ -7,6 +7,7 @@ import json
 import pathlib
 import pyaudio
 import os
+import subprocess
 
 from bark_monitor.recorders.base_recorder import BaseRecorder
 from bark_monitor.recorders.recording import Recording
@@ -14,9 +15,19 @@ from bark_monitor.recorders.recording import Recording
 def trunc_hour(t):
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
+def scp(*, src : str, dst : str):
+    try:
+        subprocess.check_call(f"scp {src} {dst}", shell=True)
+        print(f"Successfully transferred: {src} -> {dst}", flush=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Ignoring error: {e} from scp {src} -> {dst}", flush=True)
+
 class Data:
-    def __init__(self, filename):
+    def __init__(self, filename, remote_filename = None):
         self.filename = filename
+        self.remote = remote_filename
+        if self.remote:
+            scp(src=self.remote,dst=self.filename)
         try:
             self.data = json.loads(self.filename.read_text(encoding="utf-8"))
             for d in self.data["barks"]:
@@ -41,6 +52,8 @@ class Data:
                 d for d in self.data["barks"] if d["x"] > start]
         self.filename.write_text(json.dumps(self.data), encoding="utf-8")
         print(f"Saved {len(self.data['barks'])} points to {self.filename}", flush=True)
+        if self.remote:
+            scp(src=self.filename, dst=self.remote)
 
 
 
@@ -50,22 +63,32 @@ class Recorder(BaseRecorder):
     def __init__(
         self,
         output_folder: str,
+        audio_device: str | None = None,
+        output_data_file: str | None = None,
+        debug_print : bool = False,
     ) -> None:
-        self._bark_level: int = 3500
+        self._bark_level: int = 15000
 
         self.running = False
         self.is_paused = False
 
-        if env_path := os.environ.get("JSON_PATH"):
-            path = pathlib.Path(env_path)
+        self.debug = debug_print
+        self.remote_output = None
+        if output_data_file is not None:
+            if ":" in output_data_file:
+                self.remote_output = pathlib.Path(output_data_file)
+                path = pathlib.Path(self.remote_output.name)
+            else:
+                path = pathlib.Path(output_data_file)
         else:
             path = pathlib.Path("bark_data.json")
 
         if not path.is_absolute():
             path = pathlib.Path.cwd() / path
-        self.json = Data(path)
+
+        self.json = Data(path, self.remote_output)
         self._last_bark = datetime.now()
-        super().__init__(output_folder)
+        super().__init__(output_folder,audio_device=audio_device)
         self.clean_up()
 
     @property
@@ -92,6 +115,8 @@ class Recorder(BaseRecorder):
         def callback(data, frame_count, time_info, status):
             if not self.is_paused:
                 intensity = self._signal_to_intensity(data)
+                if self.debug:
+                    print(f"[debug] bark: {intensity}", flush=True)
                 # Save data if dog is barking
                 is_bark = self._is_bark(intensity)
                 # If to update time and stop recording the bark

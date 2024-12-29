@@ -2,7 +2,7 @@ import argparse
 import json
 
 
-def get_parameters() -> tuple[bool, str, str, str, str | None, int, int, str | None]:
+def get_parameters() -> tuple[bool, str, str, str, str | None, int, int, str | None, str | None, str | None, bool]:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config-file",
@@ -47,10 +47,10 @@ def get_parameters() -> tuple[bool, str, str, str, str | None, int, int, str | N
         if "sampling time bark seconds" in json_data
         else 1
     )
-
-    google_cred = (
-        json_data["google credentials"] if "google credentials" in json_data else None
-    )
+    try:
+        debug_print = int(json_data["debug_print"]) > 0
+    except:
+        debug_print = False
 
     return (
         args.accept_new_users,
@@ -60,5 +60,8 @@ def get_parameters() -> tuple[bool, str, str, str, str | None, int, int, str | N
         things_board_url,
         microphone_framerate,
         sampling_time_bark_seconds,
-        google_cred,
+        json_data.get("google credentials"),
+        json_data.get("audio_device"),
+        json_data.get("output_data_file"),
+        debug_print
     )
