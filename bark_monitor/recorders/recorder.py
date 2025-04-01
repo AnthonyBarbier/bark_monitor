@@ -55,6 +55,24 @@ class Data:
         if self.remote:
             scp(src=self.filename, dst=self.remote)
 
+class DataWindow:
+    def __init__(self):
+        self.num_points = 2400
+        self.start = None
+        self.max= 0
+        self._n = 0
+
+    def add(self, time, intensity):
+        if self._n == 0:
+            self.max = intensity
+            self.start = time
+        elif intensity > self.max:
+            self.max = intensity
+        self._n += 1
+        if self._n == self.num_points:
+            since = time - self.start
+            print(f"{time}: max {self.max} from the last {since}", flush=True)
+            self._n = 0
 
 
 class Recorder(BaseRecorder):
@@ -67,7 +85,7 @@ class Recorder(BaseRecorder):
         output_data_file: str | None = None,
         debug_print : bool = False,
     ) -> None:
-        self._bark_level: int = 15000
+        self._bark_level: int = 10000
 
         self.running = False
         self.is_paused = False
@@ -87,6 +105,8 @@ class Recorder(BaseRecorder):
             path = pathlib.Path.cwd() / path
 
         self.json = Data(path, self.remote_output)
+        self.live = DataWindow()
+        self._last_callback = datetime.now()
         self._last_bark = datetime.now()
         super().__init__(output_folder,audio_device=audio_device)
         self.clean_up()
@@ -117,11 +137,15 @@ class Recorder(BaseRecorder):
                 intensity = self._signal_to_intensity(data)
                 if self.debug:
                     print(f"[debug] bark: {intensity}", flush=True)
+
+                now = datetime.now()
+                self._last_callback = now
+                self.live.add(now, intensity)
                 # Save data if dog is barking
                 is_bark = self._is_bark(intensity)
                 # If to update time and stop recording the bark
                 if is_bark:
-                    self._last_barking = datetime.now()
+                    self._last_barking = now
                     self.json.add_bark(self._last_barking, intensity)
 
                     if self._barking_start is None:
@@ -135,7 +159,7 @@ class Recorder(BaseRecorder):
                     self._frames.append(bytes(data))
                     print(f"Adding {datetime.now()} {intensity}", flush=True)
 
-                    if (datetime.now() - self._last_barking) > timedelta(
+                    if (now - self._last_barking) > timedelta(
                         seconds=15
                     ):
                         self.json.save()
@@ -152,6 +176,8 @@ class Recorder(BaseRecorder):
                         self.clean_up()
                         self._frames = []
                         self._barking_start = None
+                    elif intensity > 5000:
+                        print(f"[debug] bark: {intensity}", flush=True)
             return (data, pyaudio.paContinue)
         self._start_stream(callback)
         self._bark_logger.info("Recording started")
@@ -159,5 +185,13 @@ class Recorder(BaseRecorder):
         assert self._stream is not None
         while self.running:
             time.sleep(1)
+            if (datetime.now() - self._last_callback) > timedelta(
+                seconds=59
+            ):
+                now = datetime.now()
+                self._bark_logger.warning(f"Restarting stream {now}")
+                self._stop_stream()
+                self._start_stream(callback)
+                self._last_callback = now
 
         self._stop_stream()

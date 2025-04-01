@@ -18,7 +18,11 @@ def main():
         debug_print,
     ) = get_parameters()
 
-    recorder = Recorder(output_folder, audio_device=audio_device, output_data_file=output_data_file, debug_print=debug_print)
+    recorder = Recorder(
+            output_folder,
+            audio_device=audio_device,
+            output_data_file=output_data_file,
+            debug_print=debug_print)
     if api_key:
         bot = VeryBarkBot(
             api_key=api_key,

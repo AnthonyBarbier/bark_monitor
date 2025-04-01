@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Optional
 
-#import tensorflow as tf
-#import tensorflow_hub as hub
-#from scipy.io import wavfile
+import tensorflow as tf
+import tensorflow_hub as hub
+from scipy.io import wavfile
 
 from bark_monitor.recorders.wave_recorder import WaveRecorder
 
@@ -22,6 +22,9 @@ class YamnetRecorder(WaveRecorder):
         sampling_time_bark_seconds: int = 1,
         http_url: Optional[str] = None,
         framerate: int = 16000,
+        output_data_file: str | None = None,
+        debug_print : bool = False,
+        audio_device: str | None = None,
     ) -> None:
         """
         `api_key` is the key of telegram bot and `config_folder` is the folder with the
@@ -34,12 +37,14 @@ class YamnetRecorder(WaveRecorder):
 
         class_map_path = self._model.class_map_path().numpy()
         self._class_names = WaveRecorder.class_names_from_csv(class_map_path)
-
         super().__init__(
             output_folder,
             sampling_time_bark_seconds,
             http_url,
             framerate,
+            output_data_file=output_data_file,
+            debug_print=debug_print,
+            audio_device=audio_device,
         )
 
     def _detect(self, wave_file: Path) -> str:
