@@ -55,12 +55,41 @@ class Data:
         if self.remote:
             scp(src=self.filename, dst=self.remote)
 
+class RemoteLog:
+    def __init__(self, dst):
+        if dst is not None:
+            assert ":" in str(dst)
+            self.remote_output = pathlib.Path(dst)
+            self.filename = pathlib.Path(self.remote_output.name)
+        else:
+            self.remote_output = None
+
+    def print(self, s):
+        print(s, flush=True)
+        self.prepend(s)
+
+    def prepend(self, s):
+        if self.remote_output is None:
+            return
+        content = self.filename.read_text(encoding="utf-8") if self.filename.is_file() else ""
+        now = f"[{datetime.now()}] "
+        content = "\n".join(now + l for l in s.splitlines()) + "\n" + content
+        self.filename.write_text(content, encoding="utf-8")
+
+    def save(self):
+        if self.remote_output is None:
+            return
+        scp(src=self.filename, dst=self.remote_output)
+
 class DataWindow:
-    def __init__(self):
+    def __init__(self, rlog):
         self.num_points = 2400
         self.start = None
         self.max= 0
         self._n = 0
+        self.rlog = rlog
+        self.rlog.print(f"========= START ========")
+        self.rlog.save()
 
     def add(self, time, intensity):
         if self._n == 0:
@@ -71,7 +100,8 @@ class DataWindow:
         self._n += 1
         if self._n == self.num_points:
             since = time - self.start
-            print(f"{time}: max {self.max} from the last {since}", flush=True)
+            self.rlog.print(f"{time}: max {self.max} from the last {since}")
+            self.rlog.save()
             self._n = 0
 
 
@@ -92,10 +122,12 @@ class Recorder(BaseRecorder):
 
         self.debug = debug_print
         self.remote_output = None
+        remote_log_file = None
         if output_data_file is not None:
             if ":" in output_data_file:
                 self.remote_output = pathlib.Path(output_data_file)
                 path = pathlib.Path(self.remote_output.name)
+                remote_log_file = self.remote_output.with_suffix(".log")
             else:
                 path = pathlib.Path(output_data_file)
         else:
@@ -104,8 +136,9 @@ class Recorder(BaseRecorder):
         if not path.is_absolute():
             path = pathlib.Path.cwd() / path
 
+        self.rlog = RemoteLog(remote_log_file)
         self.json = Data(path, self.remote_output)
-        self.live = DataWindow()
+        self.live = DataWindow(self.rlog)
         self._last_callback = datetime.now()
         self._last_bark = datetime.now()
         super().__init__(output_folder,audio_device=audio_device)

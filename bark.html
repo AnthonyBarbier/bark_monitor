@@ -18,10 +18,13 @@
 <a href="bark.html?file=bark_chromebook.json&offset=158400">[   4h  ]</a>
 <a href="bark.html?file=bark_chromebook.json&offset=169200">[   1h  ]</a>
 <br/>
+<embed id="log" />
 
 <script type="module">
   const params = new URLSearchParams(window.location.search);
   const filename = "./"+ (params.get("file") || "bark_data.json")
+  const logfile = filename.substr(0, filename.lastIndexOf(".")) + ".log";
+  document.getElementById('log').setAttribute("src", logfile);
   const time_offset = parseInt(params.get("offset") || "0");
   const { default: bark_data} = await import(filename, {with: {type: 'json'}});
   console.log(bark_data)

@@ -15,7 +15,7 @@ import tensorflow as tf
 
 from bark_monitor.recorders.base_recorder import BaseRecorder
 from bark_monitor.recorders.recording import Recording
-from bark_monitor.recorders.recorder import Data, DataWindow
+from bark_monitor.recorders.recorder import Data, DataWindow, RemoteLog
 
 
 class WaveRecorder(BaseRecorder):
@@ -63,10 +63,12 @@ class WaveRecorder(BaseRecorder):
         ]
         self.debug = debug_print
         self.remote_output = None
+        remote_log_file = None
         if output_data_file is not None:
             if ":" in output_data_file:
                 self.remote_output = Path(output_data_file)
                 path = Path(self.remote_output.name)
+                remote_log_file = self.remote_output.with_suffix(".log")
             else:
                 path = Path(output_data_file)
         else:
@@ -75,8 +77,9 @@ class WaveRecorder(BaseRecorder):
         if not path.is_absolute():
             path = Path.cwd() / path
 
+        self.rlog = RemoteLog(remote_log_file)
         self.json = Data(path, self.remote_output)
-        self.live = DataWindow()
+        self.live = DataWindow(self.rlog)
         self._last_callback = datetime.now()
         self._last_bark = datetime.now()
 
@@ -159,7 +162,7 @@ class WaveRecorder(BaseRecorder):
 
     def _analyse_recording(self, nn_recording: Path) -> None:
         label = self._detect(nn_recording)
-        print(f"DETECT called {nn_recording} = {label} {self._max_intensity}",flush=True)
+        self.rlog.print(f"DETECT called {nn_recording} = {label} {self._max_intensity}")
         self._bark_logger.info("detected " + label)
 
         payload = dict.fromkeys(self._animal_labels, 0)
