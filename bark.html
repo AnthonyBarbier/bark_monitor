@@ -63,6 +63,10 @@
      }
      return out;
   };
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+      Chart.defaults.font.size = 25;
+  }
   new Chart(ctx,{
     type: 'bubble',
     data: data,
@@ -73,18 +77,18 @@
         zoom: {
           pan: {
             enabled: true,
-            scaleMode: "xy",
+            mode: "x",
           },
           limits: {
           },
           zoom: {
             wheel: {
-              enabled: true,
+              enabled: false,
             },
             pinch: {
               enabled: true,
             },
-            scaleMode: "xy",
+            scaleMode: "x",
           }
         },
         tooltip: {
