@@ -73,7 +73,7 @@ class RemoteLog:
             return
         content = self.filename.read_text(encoding="utf-8") if self.filename.is_file() else ""
         now = f"[{datetime.now()}] "
-        content = "\n".join(now + l for l in s.splitlines()) + "\n" + content
+        content = "\n".join(now + l for l in s.splitlines()) + "\n" + content[:200000]
         self.filename.write_text(content, encoding="utf-8")
 
     def save(self):
